@@ -1,0 +1,101 @@
+import java.util.*;
+
+public class QuizApp {
+    static Scanner scanner = new Scanner(System.in);
+    static int score = 0;
+    static List<Question> questions = new ArrayList<>();
+    static Map<Integer, Boolean> answerSummary = new HashMap<>();
+    static boolean answered = false;
+    static String userAnswer = "";
+
+    public static void main(String[] args) {
+        setupQuestions();
+        System.out.println("Welcome to the Java Quiz!");
+        System.out.println("You have 10 seconds to answer each question.");
+        System.out.println("Press Enter to start...");
+        scanner.nextLine();
+
+        for (int i = 0; i < questions.size(); i++) {
+            askQuestion(i);
+        }
+
+        showResults();
+    }
+
+    static void setupQuestions() {
+        questions.add(new Question("What is the capital of France?",
+                new String[]{"A. Paris", "B. London", "C. Rome", "D. Berlin"}, "A"));
+        questions.add(new Question("Which language runs in a web browser?",
+                new String[]{"A. Java", "B. C", "C. Python", "D. JavaScript"}, "D"));
+        questions.add(new Question("What does OOP stand for?",
+                new String[]{"A. Object Oriented Programming", "B. Online Object Processing", "C. Only Object Program", "D. None"}, "A"));
+    }
+
+    static void askQuestion(int index) {
+        Question q = questions.get(index);
+        System.out.println("\nQuestion " + (index + 1) + ": " + q.question);
+        for (String opt : q.options) {
+            System.out.println(opt);
+        }
+
+        answered = false;
+        userAnswer = "";
+
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            public void run() {
+                if (!answered) {
+                    System.out.println("\n⏰ Time's up!");
+                    userAnswer = "";
+                    answered = true;
+                }
+            }
+        }, 10000); // 10 seconds
+
+        long start = System.currentTimeMillis();
+        while (!answered && (System.currentTimeMillis() - start) < 10000) {
+            if (scanner.hasNextLine()) {
+                userAnswer = scanner.nextLine().trim().toUpperCase();
+                answered = true;
+                break;
+            }
+        }
+
+        timer.cancel();
+
+        if (userAnswer.equals(q.correctAnswer)) {
+            System.out.println("✅ Correct!");
+            score++;
+            answerSummary.put(index, true);
+        } else {
+            System.out.println("❌ Incorrect. Correct Answer: " + q.correctAnswer);
+            answerSummary.put(index, false);
+        }
+    }
+
+    static void showResults() {
+        System.out.println("\n==========================");
+        System.out.println("        Quiz Result       ");
+        System.out.println("==========================");
+        System.out.println("Your Score: " + score + "/" + questions.size());
+        System.out.println("\nSummary:");
+
+        for (int i = 0; i < questions.size(); i++) {
+            Question q = questions.get(i);
+            String result = answerSummary.get(i) ? "Correct" : "Incorrect";
+            System.out.println("Q" + (i + 1) + ": " + result + " (Answer: " + q.correctAnswer + ")");
+        }
+    }
+}
+
+class Question {
+    String question;
+    String[] options;
+    String correctAnswer;
+
+    public Question(String question, String[] options, String correctAnswer) {
+        this.question = question;
+        this.options = options;
+        this.correctAnswer = correctAnswer.toUpperCase();
+    }
+}
