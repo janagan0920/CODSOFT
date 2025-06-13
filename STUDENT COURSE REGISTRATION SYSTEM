@@ -1,0 +1,164 @@
+import java.util.*;
+
+// Course class
+class Course {
+    String code, title, description, schedule;
+    int capacity;
+    List<String> registeredStudents;
+
+    public Course(String code, String title, String description, int capacity, String schedule) {
+        this.code = code;
+        this.title = title;
+        this.description = description;
+        this.capacity = capacity;
+        this.schedule = schedule;
+        this.registeredStudents = new ArrayList<>();
+    }
+
+    boolean isAvailable() {
+        return registeredStudents.size() < capacity;
+    }
+
+    void registerStudent(String studentId) {
+        if (!registeredStudents.contains(studentId) && isAvailable()) {
+            registeredStudents.add(studentId);
+        }
+    }
+
+    void removeStudent(String studentId) {
+        registeredStudents.remove(studentId);
+    }
+
+    int availableSlots() {
+        return capacity - registeredStudents.size();
+    }
+
+    void display() {
+        System.out.println(code + " | " + title + " | " + description);
+        System.out.println("Schedule: " + schedule + ", Slots left: " + availableSlots());
+        System.out.println("--------------------------------------------");
+    }
+}
+
+// Student class
+class Student {
+    String id, name;
+    List<Course> registeredCourses;
+
+    public Student(String id, String name) {
+        this.id = id;
+        this.name = name;
+        this.registeredCourses = new ArrayList<>();
+    }
+
+    void registerCourse(Course course) {
+        if (!registeredCourses.contains(course) && course.isAvailable()) {
+            registeredCourses.add(course);
+            course.registerStudent(id);
+            System.out.println("✅ Registered for " + course.code);
+        } else {
+            System.out.println("⚠️ Cannot register (maybe full or already registered).");
+        }
+    }
+
+    void dropCourse(String courseCode) {
+        Iterator<Course> it = registeredCourses.iterator();
+        while (it.hasNext()) {
+            Course course = it.next();
+            if (course.code.equalsIgnoreCase(courseCode)) {
+                it.remove();
+                course.removeStudent(id);
+                System.out.println("🗑️ Dropped " + courseCode);
+                return;
+            }
+        }
+        System.out.println("⚠️ Course not found in your registration.");
+    }
+
+    void showRegisteredCourses() {
+        System.out.println("📚 Registered Courses:");
+        for (Course c : registeredCourses) {
+            System.out.println("- " + c.code + ": " + c.title);
+        }
+        if (registeredCourses.isEmpty()) {
+            System.out.println("No courses registered.");
+        }
+    }
+}
+
+// Main class (must be named 'Main' in most online compilers)
+public class Main {
+    static Map<String, Course> courses = new HashMap<>();
+    static Map<String, Student> students = new HashMap<>();
+    static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        seedData();
+        while (true) {
+            System.out.println("\n===== Course Registration System =====");
+            System.out.print("Enter Student ID (or type 'exit' to quit): ");
+            String studentId = scanner.nextLine().trim();
+            if (studentId.equalsIgnoreCase("exit")) break;
+
+            Student student = students.getOrDefault(studentId, null);
+            if (student == null) {
+                System.out.print("New student. Enter your name: ");
+                String name = scanner.nextLine().trim();
+                student = new Student(studentId, name);
+                students.put(studentId, student);
+                System.out.println("✅ Student registered.");
+            }
+
+            int choice;
+            do {
+                System.out.println("\nHello " + student.name + "! Choose an option:");
+                System.out.println("1. View Available Courses");
+                System.out.println("2. Register for a Course");
+                System.out.println("3. Drop a Course");
+                System.out.println("4. View My Courses");
+                System.out.println("5. Logout");
+
+                try {
+                    choice = Integer.parseInt(scanner.nextLine().trim());
+                } catch (Exception e) {
+                    choice = -1;
+                }
+
+                switch (choice) {
+                    case 1 -> listCourses();
+                    case 2 -> {
+                        listCourses();
+                        System.out.print("Enter course code to register: ");
+                        String code = scanner.nextLine().trim().toUpperCase();
+                        Course course = courses.get(code);
+                        if (course != null) student.registerCourse(course);
+                        else System.out.println("❌ Invalid course code.");
+                    }
+                    case 3 -> {
+                        student.showRegisteredCourses();
+                        System.out.print("Enter course code to drop: ");
+                        String code = scanner.nextLine().trim().toUpperCase();
+                        student.dropCourse(code);
+                    }
+                    case 4 -> student.showRegisteredCourses();
+                    case 5 -> System.out.println("🔓 Logging out...");
+                    default -> System.out.println("❗ Invalid option. Try again.");
+                }
+            } while (choice != 5);
+        }
+        System.out.println("👋 Goodbye!");
+    }
+
+    static void listCourses() {
+        System.out.println("\n=== Available Courses ===");
+        for (Course c : courses.values()) {
+            c.display();
+        }
+    }
+
+    static void seedData() {
+        courses.put("CS101", new Course("CS101", "Intro to Programming", "Learn Java basics", 2, "Mon-Wed 10am"));
+        courses.put("MA201", new Course("MA201", "Calculus II", "Advanced calculus topics", 3, "Tue-Thu 1pm"));
+        courses.put("PH105", new Course("PH105", "Physics", "Mechanics and Thermodynamics", 2, "Fri 9am"));
+    }
+}
